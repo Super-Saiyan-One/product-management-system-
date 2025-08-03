@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-SecureRootPass123!}
+      MYSQL_DATABASE: product_management
+      MYSQL_USER: ${MYSQL_USER:-app_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-SecureAppPass456!}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./mysql-backup:/backup
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-SecureRootPass123!}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app-network
+
+  backend:
+    # 使用预构建镜像（需要替换为实际的镜像名）
+    image: ${BACKEND_IMAGE:-your-registry/product-management-backend:latest}
+    # 或者本地构建
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.backend
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://${MYSQL_USER:-app_user}:${MYSQL_PASSWORD:-SecureAppPass456!}@mysql:3306/product_management
+      - JWT_SECRET=${JWT_SECRET:-jwt-secret-key-change-this}
+      - PORT=3001
+    volumes:
+      - uploads_data:/app/uploads
+      - logs_data:/app/logs
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app-network
+
+  frontend:
+    # 使用预构建镜像（需要替换为实际的镜像名）
+    image: ${FRONTEND_IMAGE:-your-registry/product-management-frontend:latest}
+    # 或者本地构建
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.frontend
+    #   args:
+    #     - BUILD_ENV=${BUILD_ENV:-ip}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  uploads_data:
+    driver: local
+  logs_data:
+    driver: local

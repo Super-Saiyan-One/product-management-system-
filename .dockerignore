@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+*.md
+DEPLOYMENT*.md
+
+# Development
+.env
+.env.*
+!.env.production
+
+# Logs
+logs/
+*.log
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup and temp files
+*.bak
+*.tmp
+*~
+
+# Upload directory
+uploads/
+mysql-backup/
+
+# Scripts (keep only necessary ones)
+deploy*.sh
+!deploy-docker.sh

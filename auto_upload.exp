@@ -1,0 +1,66 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set server_ip "192.144.128.67"
+set password "H|Crkz-%9K8f;/A"
+
+# 上传项目文件
+spawn scp ../product-management-system.tar.gz root@$server_ip:/tmp/
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    eof
+}
+
+# 上传部署脚本
+spawn scp deploy_server.sh root@$server_ip:/tmp/
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    eof
+}
+
+# 连接服务器并执行部署
+spawn ssh root@$server_ip
+expect {
+    "password:" {
+        send "$password\r"
+    }
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+}
+
+expect "# "
+send "cd /tmp\r"
+
+expect "# "
+send "chmod +x deploy_server.sh\r"
+
+expect "# "
+send "./deploy_server.sh\r"
+
+# 等待部署完成
+expect {
+    "部署完成" {
+        puts "\n部署成功完成！"
+    }
+    timeout {
+        puts "\n部署超时，请手动检查"
+    }
+}
+
+interact
